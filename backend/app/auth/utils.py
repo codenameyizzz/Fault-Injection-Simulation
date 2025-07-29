@@ -42,19 +42,19 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(bearer_
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         username: str = payload.get("sub")
-        print("✅ JWT payload:", payload)
+        print(" JWT payload:", payload)
         if username is None:
             raise HTTPException(status_code=401, detail="Invalid token")
     except JWTError as e:
-        print("❌ JWT decode error:", str(e))
+        print(" JWT decode error:", str(e))
         raise HTTPException(status_code=401, detail="Invalid token")
 
     user = db.query(models.User).filter(models.User.username == username).first()
     if user is None:
-        print("❌ User tidak ditemukan di DB!")
+        print(" User tidak ditemukan di DB!")
         raise HTTPException(status_code=401, detail="User not found")
 
-    print("✅ User ditemukan:", user.username, "| Role:", user.role)
+    print(" User ditemukan:", user.username, "| Role:", user.role)
     return user
 
 
