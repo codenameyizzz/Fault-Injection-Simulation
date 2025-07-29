@@ -26,8 +26,13 @@ class ExperimentCreate(ExperimentBase):
 
 class ExperimentResponse(ExperimentBase):
     id: int
-    status: str
-    created_at: datetime
     owner_id: int
+    status: str
+    notes: str | None
+
     class Config:
-        orm_mode = True
+        from_attributes = True
+
+class ReviewUpdate(BaseModel):
+    status: str              # expected: "under_review", "accepted", "need_revision"
+    notes: str | None

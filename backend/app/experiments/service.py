@@ -1,5 +1,7 @@
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
+from app.schemas import ReviewUpdate
+from app.models import Experiment
 from app import models, schemas
 
 # --- Create Experiment ---
@@ -43,3 +45,14 @@ def delete_experiment(db: Session, exp_id: int):
     db.delete(exp)
     db.commit()
     return {"message": "Experiment deleted"}
+
+# --- Review Experiment (mentor only) ---
+def review_experiment(db: Session, exp_id: int, review: ReviewUpdate):
+    exp = db.query(Experiment).filter(Experiment.id == exp_id).first()
+    if not exp:
+        raise HTTPException(status_code=404, detail="Experiment not found")
+    exp.status = review.status
+    exp.notes  = review.notes
+    db.commit()
+    db.refresh(exp)
+    return exp

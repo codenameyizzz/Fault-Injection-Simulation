@@ -59,7 +59,7 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(bearer_
 
 
 # === Role-based Access ===
-# def require_mentor(current_user: models.User = Depends(get_current_user)):
-#     if current_user.role != "mentor":
-#         raise HTTPException(status_code=403, detail="Mentor access required")
-#     return current_user
+def require_mentor(current_user: models.User = Depends(get_current_user)):
+    if current_user.role != "mentor":
+        raise HTTPException(status_code=403, detail="Mentor access required")
+    return current_user

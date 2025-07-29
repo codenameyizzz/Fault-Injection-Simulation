@@ -15,7 +15,7 @@ class User(Base):
 class Experiment(Base):
     __tablename__ = "experiments"
     id = Column(Integer, primary_key=True, index=True)
-    name = Column(String(100), nullable=False)
+    name = Column(String(255), nullable=False)
     description = Column(Text, nullable=True)
     fault_type = Column(String(50))
     status = Column(String(20), default="pending")
@@ -23,3 +23,7 @@ class Experiment(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 
     owner = relationship("User", back_populates="experiments")
+
+    # review
+    status = Column(String(50), default="under_review", nullable=False)
+    notes  = Column(Text, nullable=True)
