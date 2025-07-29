@@ -79,9 +79,6 @@ function ExperimentsContent() {
       {/* Header & Back Link */}
       <div className="d-flex justify-content-between align-items-center mb-4">
         <h1>Experiments</h1>
-        <Link href="/dashboard" className="btn btn-link">
-          ← Back to Dashboard
-        </Link>
       </div>
 
       {/* Create Form */}
