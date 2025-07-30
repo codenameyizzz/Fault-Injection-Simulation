@@ -74,6 +74,12 @@ export default function Navbar() {
                                 </button>
                             </li>
                         )}
+                        {/* Sebelum Logout */}
+                        <li className="nav-item">
+                            <Link href="/profile" className="nav-link">
+                                Profile
+                            </Link>
+                        </li>
                     </ul>
                 </div>
             </div>

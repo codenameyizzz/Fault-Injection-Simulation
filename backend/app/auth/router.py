@@ -48,3 +48,19 @@ def read_current_user(
     Berdasarkan JWT yang dikirim di Authorization header.
     """
     return current_user
+
+@router.put("/me/password", response_model=schemas.UserResponse)
+def change_password(
+    payload: schemas.ChangePassword,         # schema baru
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    # Verifikasi current password
+    if not verify_password(payload.current_password, current_user.hashed_password):
+        raise HTTPException(status_code=400, detail="Current password incorrect")
+
+    # Update ke password baru
+    current_user.hashed_password = hash_password(payload.new_password)
+    db.commit()
+    db.refresh(current_user)
+    return current_user

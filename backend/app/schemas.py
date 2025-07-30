@@ -16,7 +16,7 @@ class UserResponse(UserBase):
     role: str
 
     class Config:
-        orm_mode = True        # Pydantic v1; if v2 use 'from_attributes = True'
+        orm_mode = True      
 
 
 # === Experiment Schemas ===
@@ -31,14 +31,18 @@ class ExperimentCreate(ExperimentBase):
 class ExperimentResponse(ExperimentBase):
     id: int
     owner_id: int
-    owner: UserResponse       # ← Tambahkan nested owner
+    owner: UserResponse    
     status: str
     notes: Optional[str]
 
     class Config:
-        orm_mode = True        # or use 'from_attributes = True' for Pydantic v2
+        orm_mode = True        
 
 
 class ReviewUpdate(BaseModel):
-    status: str              # "under_review", "accepted", or "need_revision"
+    status: str            
     notes: Optional[str]
+
+class ChangePassword(BaseModel):
+    current_password: str
+    new_password: str
