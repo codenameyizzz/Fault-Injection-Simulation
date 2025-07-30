@@ -27,3 +27,13 @@ class Experiment(Base):
     # review
     status = Column(String(50), default="under_review", nullable=False)
     notes  = Column(Text, nullable=True)
+
+class Job(Base):
+    __tablename__ = "jobs"
+    id             = Column(Integer, primary_key=True, index=True)
+    experiment_id  = Column(Integer, ForeignKey("experiments.id"), nullable=False)
+    created_at     = Column(DateTime, default=datetime.utcnow, nullable=False)
+    status         = Column(String(50), default="queued", nullable=False)
+    notes          = Column(Text, nullable=True)
+    trace_path     = Column(String(255), nullable=True)   # path file trace
+    fault_config   = Column(Text, nullable=True)         # simpan JSON config

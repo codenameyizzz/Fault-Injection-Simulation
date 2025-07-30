@@ -46,3 +46,19 @@ class ReviewUpdate(BaseModel):
 class ChangePassword(BaseModel):
     current_password: str
     new_password: str
+
+class JobCreate(BaseModel):
+    fault_config: dict                              # JSON front‑end
+    # trace file di-handle via UploadFile di router
+
+class JobResponse(BaseModel):
+    id: int
+    experiment_id: int
+    created_at: datetime
+    status: str
+    notes: Optional[str]
+    trace_path: Optional[str]
+    fault_config: Optional[dict]
+
+    class Config:
+        orm_mode = True
