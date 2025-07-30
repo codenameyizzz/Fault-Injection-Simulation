@@ -5,6 +5,14 @@ from app.database import get_db
 from app import models, schemas
 from .utils import hash_password, verify_password, create_access_token
 
+from .utils import (
+    hash_password,
+    verify_password,
+    create_access_token,
+    get_current_user,    # ← pastikan ini diimpor
+    require_mentor       # ← optional, untuk reviews
+)
+
 router = APIRouter(prefix="/auth", tags=["Auth"])
 
 # === REGISTER ===
@@ -30,3 +38,13 @@ def login(user: schemas.UserCreate, db: Session = Depends(get_db)):
     # Buat JWT
     access_token = create_access_token(data={"sub": db_user.username})
     return {"access_token": access_token, "token_type": "bearer", "role": db_user.role}
+
+@router.get("/me", response_model=schemas.UserResponse)
+def read_current_user(
+    current_user: models.User = Depends(get_current_user)
+):
+    """
+    Endpoint untuk fetch detail user (username, role, dsb.)
+    Berdasarkan JWT yang dikirim di Authorization header.
+    """
+    return current_user

@@ -1,36 +1,46 @@
+// src/context/AuthContext.js
 "use client";
 import { createContext, useState, useEffect } from "react";
-import api from "@/api/api"; // sudah terhubung
+import api from "@/api/api";
 
 export const AuthContext = createContext();
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null);
+  const [user, setUser]     = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Cek token dari localStorage saat pertama kali load
+  // 1) Cek token & fetch user detail
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (token) {
-      // 🔹 Panggil endpoint /auth/me jika ada untuk verifikasi user
+      api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
       api.get("/auth/me")
-        .then(res => setUser(res.data))
-        .catch(() => localStorage.removeItem("token"))
+        .then(res => setUser(res.data))      // <-- res.data harus berisi { username, role, ... }
+        .catch(() => {
+          localStorage.removeItem("token");
+        })
         .finally(() => setLoading(false));
     } else {
       setLoading(false);
     }
   }, []);
 
+  // 2) Login: simpan token, panggil /auth/me
   const login = async (username, password) => {
     const res = await api.post("/auth/login", { username, password });
-    localStorage.setItem("token", res.data.access_token);
-    setUser({ username }); // atau dari response API
+    const token = res.data.access_token;
+    localStorage.setItem("token", token);
+    api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+    // Ambil detail user lengkap
+    const me = await api.get("/auth/me");
+    setUser(me.data);   // me.data: { username, role, ... }
   };
 
+  // 3) Logout
   const logout = () => {
     localStorage.removeItem("token");
     setUser(null);
+    delete api.defaults.headers.common["Authorization"];
   };
 
   return (
