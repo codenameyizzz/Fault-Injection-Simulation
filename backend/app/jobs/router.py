@@ -1,5 +1,7 @@
-from fastapi import APIRouter, Depends, UploadFile, File
+# app/jobs/router.py
+from fastapi import APIRouter, Depends, UploadFile, File, HTTPException
 from sqlalchemy.orm import Session
+from typing import List
 from app.database import get_db
 from app.auth.utils import get_current_user, require_mentor
 from app import schemas, models
@@ -10,7 +12,7 @@ router = APIRouter(prefix="/jobs", tags=["Jobs"])
 @router.post("/", response_model=schemas.JobResponse)
 async def upload_job(
     experiment_id: int,
-    fault_config: str,                           # kirim sebagai JSON string
+    fault_config: str,
     trace: UploadFile = File(...),
     db: Session = Depends(get_db),
     user=Depends(get_current_user),
@@ -23,5 +25,3 @@ def get_jobs(
     user=Depends(get_current_user),
 ):
     return list_jobs(db, user)
-
-# (opsional) detail, update status, dll.

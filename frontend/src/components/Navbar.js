@@ -46,6 +46,16 @@ export default function Navbar() {
                                         </Link>
                                     </li>
                                 )}
+                                {user && (
+                                    <>
+                                        {/* ... existing links */}
+                                        <li className="nav-item">
+                                            <Link href="/jobs" className="nav-link">
+                                                Jobs
+                                            </Link>
+                                        </li>
+                                    </>
+                                )}
                             </>
                         )}
                     </ul>

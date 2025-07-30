@@ -4,6 +4,7 @@ from app.auth import router as auth_router
 from app.experiments import router as exp_router
 from fastapi.openapi.utils import get_openapi
 from fastapi.security import HTTPBearer
+from app.jobs.router import router as jobs_router 
 
 security = HTTPBearer()
 app = FastAPI(title="Fault Injection API")
@@ -20,6 +21,7 @@ app.add_middleware(
 # === Router ===
 app.include_router(auth_router.router)
 app.include_router(exp_router.router)
+app.include_router(jobs_router)
 
 @app.get("/")
 def root():
