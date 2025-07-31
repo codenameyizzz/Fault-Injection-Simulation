@@ -26,7 +26,7 @@ app.add_middleware(
 app.include_router(auth_router.router)
 app.include_router(exp_router.router)
 app.include_router(jobs_router)
-app.include_router(ssh_router) 
+app.include_router(ssh_router)
 
 @app.get("/")
 def root():

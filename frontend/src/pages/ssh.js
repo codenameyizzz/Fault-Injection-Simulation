@@ -1,28 +1,34 @@
-// frontend/pages/ssh.js
+"use client";
 
 import { useState } from "react";
 import api from "@/api/api";
 
 export default function SSHPage() {
-  const [cmd, setCmd] = useState("");
-  const [output, setOutput] = useState(null);
+  const [cmd, setCmd] = useState(""); // React state :contentReference[oaicite:6]{index=6}
+  const [cwd, setCwd] = useState(".");
+  const [stdout, setStdout] = useState("");
+  const [stderr, setStderr] = useState("");
 
   const runSSH = async (e) => {
     e.preventDefault();
     try {
-      const res = await api.post("/ssh", { command: cmd });
-      setOutput(res.data);
+      const res = await api.post("/ssh", { command: cmd, cwd });
+      setStdout(res.data.stdout);
+      setStderr(res.data.stderr);
+      setCwd(res.data.cwd); // update cwd in UI :contentReference[oaicite:7]{index=7}
     } catch (err) {
-      setOutput({
-        stdout: "",
-        stderr: err.response?.data.detail || err.message,
-      });
+      setStdout("");
+      setStderr(err.response?.data.detail || err.message);
     }
+    setCmd("");
   };
 
   return (
     <div className="container mt-5">
       <h2>Remote SSH Executor</h2>
+      <p>
+        <strong>Current directory:</strong> {cwd}
+      </p>
       <form onSubmit={runSSH}>
         <div className="mb-3">
           <label htmlFor="cmd" className="form-label">
@@ -40,15 +46,10 @@ export default function SSHPage() {
           Run
         </button>
       </form>
-
-      {output && (
-        <pre className="mt-4">
-          {output.stdout}
-          {output.stderr && (
-            <span className="text-danger">Error: {output.stderr}</span>
-          )}
-        </pre>
-      )}
+      <pre className="mt-4">
+        {stdout}
+        {stderr && <span className="text-danger">Error: {stderr}</span>}
+      </pre>
     </div>
   );
 }
