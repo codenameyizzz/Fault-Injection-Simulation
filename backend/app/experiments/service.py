@@ -98,3 +98,31 @@ def fetch_experiment_logs(label: str):
     sftp.close()
     ssh.close()
     return str(local_base)
+
+def fetch_logs(fault_type: str, label: str) -> str:
+    host = os.getenv("SSH_HOST")
+    user = os.getenv("SSH_USER")
+    key  = os.getenv("SSH_KEY_PATH")
+
+    base_remote = f"~/sweep_logs/{fault_type}_{label}"
+    local_base  = Path("data") / fault_type / label
+    local_base.mkdir(parents=True, exist_ok=True)
+
+    ssh = paramiko.SSHClient()
+    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    ssh.connect(hostname=host, username=user, key_filename=key)
+    sftp = ssh.open_sftp()
+
+    try:
+        files = sftp.listdir(base_remote)
+    except IOError:
+        sftp.close()
+        ssh.close()
+        raise HTTPException(404, f"No logs at {base_remote}")
+
+    for fname in files:
+        sftp.get(f"{base_remote}/{fname}", str(local_base / fname))
+
+    sftp.close()
+    ssh.close()
+    return str(local_base)

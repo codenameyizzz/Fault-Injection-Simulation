@@ -1,110 +1,106 @@
+// frontend/src/pages/experiments/run.js
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/router";
-import api from "@/api/api";
+import { useRouter } from "next/navigation";
 
-export default function RunExperimentPage() {
+export default function RunExperiment() {
   const router = useRouter();
-  // Kita bisa ambil query param ?id=… jika mau integrasi dengan list
-  // or gunakan static/dynamic route nanti
-  const [delay, setDelay]       = useState("35ms");
-  const [ops, setOps]           = useState(120);
-  const [label, setLabel]       = useState("slowleader_mid2end35ms");
-  const [faultTime, setFaultTime] = useState(60);
+  const [faultType, setFaultType] = useState("firmware_tail");
+  const [start, setStart] = useState(5);
+  const [step, setStep]    = useState(5);
+  const [end, setEnd]      = useState(30);
+  const [diskId, setDiskId]       = useState(2);
+  const [slowCount, setSlowCount] = useState(10);
+  const [delayMin, setDelayMin]   = useState(100);
+  const [delayMax, setDelayMax]   = useState(1000);
+  const [label, setLabel]         = useState("");
 
-  const [status, setStatus]     = useState("");
-  const [chart, setChart]       = useState("");
+  const run = () => {
+    const lbl = label || `${faultType}_${start}-${end}pct`;
 
-  const handleRun = async () => {
-    setStatus("Running experiment…");
-    try {
-      // 1. Run remote script
-      await api.post("/experiments/run", {
-        delay,
-        ops,
-        label,
-        fault_time: faultTime,
-      });
-
-      setStatus("Fetching logs…");
-      // 2. Fetch & download logs
-      await api.get(`/experiments/logs/${label}`);
-
-      setStatus("Analyzing & plotting…");
-      // 3. Analyze & ambil chart base64
-      const res = await api.get(`/experiments/analyze/${label}`);
-      setChart(res.data.chart);
-
-      setStatus("Done!");
-    } catch (e) {
-      setStatus("Error: " + (e.response?.data.detail || e.message));
-    }
+    // pindah ke halaman streaming dengan semua query params
+    router.push({
+      pathname: "/experiments/run-stream",
+      query: {
+        fault_type:     faultType,
+        start_pct:      start,
+        step_pct:       step,
+        end_pct:        end,
+        disk_id:        diskId,
+        slow_io_count:  slowCount,
+        delay_min_us:   delayMin,
+        delay_max_us:   delayMax,
+        label:          lbl,
+      },
+    });
   };
 
   return (
-    <div className="container py-5">
-      <h2>Run & Visualize Experiment</h2>
+    <div className="container py-4">
+      <h3>Run Fault Experiment (Live)</h3>
 
-      <div className="row g-3 mb-4">
+      {/* Form input sama seperti sebelumnya */}
+      <div className="row g-3 mb-3">
         <div className="col-md-3">
-          <label className="form-label">Delay</label>
-          <select
-            className="form-select"
-            value={delay}
-            onChange={(e) => setDelay(e.target.value)}
-          >
-            {["0ms", "1ms", "10ms", "35ms"].map((d) => (
-              <option key={d} value={d}>{d}</option>
-            ))}
+          <label>Fault Type</label>
+          <select className="form-select" value={faultType}
+                  onChange={e=>setFaultType(e.target.value)}>
+            <option value="firmware_tail">Firmware Tail</option>
+            <option value="raid_tail">RAID Tail</option>
+            <option value="gc_slowness">GC Slowness</option>
           </select>
         </div>
         <div className="col-md-2">
-          <label className="form-label">Ops</label>
-          <input
-            type="number"
-            className="form-control"
-            value={ops}
-            onChange={(e) => setOps(+e.target.value)}
-          />
-        </div>
-        <div className="col-md-4">
-          <label className="form-label">Label</label>
-          <input
-            type="text"
-            className="form-control"
-            value={label}
-            onChange={(e) => setLabel(e.target.value)}
-          />
+          <label>Start %</label>
+          <input type="number" className="form-control"
+                 value={start} onChange={e=>setStart(+e.target.value)} />
         </div>
         <div className="col-md-2">
-          <label className="form-label">Fault Time (s)</label>
-          <input
-            type="number"
-            className="form-control"
-            value={faultTime}
-            onChange={(e) => setFaultTime(+e.target.value)}
-          />
+          <label>Step %</label>
+          <input type="number" className="form-control"
+                 value={step} onChange={e=>setStep(+e.target.value)} />
         </div>
-        <div className="col-md-1 d-flex align-items-end">
-          <button className="btn btn-primary w-100" onClick={handleRun}>
-            Run
-          </button>
+        <div className="col-md-2">
+          <label>End %</label>
+          <input type="number" className="form-control"
+                 value={end} onChange={e=>setEnd(+e.target.value)} />
+        </div>
+        <div className="col-md-3">
+          <label>Label (optional)</label>
+          <input type="text" className="form-control"
+                 placeholder="auto-generated if blank"
+                 value={label}
+                 onChange={e=>setLabel(e.target.value)} />
         </div>
       </div>
 
-      <p><strong>Status:</strong> {status}</p>
-
-      {chart && (
-        <div className="mt-4">
-          <h4>Result Chart</h4>
-          <img
-            src={chart}
-            alt="Experiment Chart"
-            className="img-fluid border rounded"
-          />
+      <div className="row g-3 mb-3">
+        <div className="col-md-2">
+          <label>Disk ID</label>
+          <input type="number" className="form-control"
+                 value={diskId} onChange={e=>setDiskId(+e.target.value)} />
         </div>
-      )}
+        <div className="col-md-2">
+          <label>Slow IO Count</label>
+          <input type="number" className="form-control"
+                 value={slowCount} onChange={e=>setSlowCount(+e.target.value)} />
+        </div>
+        <div className="col-md-4">
+          <label>Delay Min (µs)</label>
+          <input type="number" className="form-control"
+                 value={delayMin} onChange={e=>setDelayMin(+e.target.value)} />
+        </div>
+        <div className="col-md-4">
+          <label>Delay Max (µs)</label>
+          <input type="number" className="form-control"
+                 value={delayMax} onChange={e=>setDelayMax(+e.target.value)} />
+        </div>
+      </div>
+
+      <button className="btn btn-primary" onClick={run}>
+        Run Live Experiment
+      </button>
     </div>
   );
 }
