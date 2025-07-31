@@ -3,6 +3,8 @@ from fastapi import HTTPException, status
 from app.schemas import ReviewUpdate
 from app.models import Experiment
 from app import models, schemas
+import os, paramiko
+from pathlib import Path
 
 # --- Create Experiment ---
 def create_experiment(db: Session, experiment: schemas.ExperimentCreate, user_id: int):
@@ -56,3 +58,43 @@ def review_experiment(db: Session, exp_id: int, review: ReviewUpdate):
     db.commit()
     db.refresh(exp)
     return exp
+
+def fetch_experiment_logs(label: str):
+    host       = os.getenv("SSH_HOST")
+    user       = os.getenv("SSH_USER")
+    key        = os.getenv("SSH_KEY_PATH")
+    base_remote = "cassandra-demo/etcd_bench_results"
+    local_base  = Path("data") / label
+    local_base.mkdir(parents=True, exist_ok=True)
+
+    ssh  = paramiko.SSHClient()
+    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    ssh.connect(hostname=host, username=user, key_filename=key)
+    sftp = ssh.open_sftp()
+
+    # 1) Dapatkan daftar folder di etcd_bench_results
+    try:
+        all_entries = sftp.listdir(base_remote)
+    except IOError:
+        raise FileNotFoundError(f"Remote dir not found: {base_remote}")
+
+    # 2) Cari folder yang mengandung label
+    matched = [
+        name for name in all_entries
+        if name.endswith(f"_{label}")
+    ]
+    if not matched:
+        raise FileNotFoundError(f"No remote experiment folder matching: {label}")
+    # Misal ambil folder pertama bila >1
+    remote_folder = matched[0]
+    remote_path   = f"{base_remote}/{remote_folder}"
+
+    # 3) Download semua file dalam folder itu
+    for entry in sftp.listdir(remote_path):
+        remote_file = f"{remote_path}/{entry}"
+        local_file  = local_base / entry
+        sftp.get(remote_file, str(local_file))
+
+    sftp.close()
+    ssh.close()
+    return str(local_base)

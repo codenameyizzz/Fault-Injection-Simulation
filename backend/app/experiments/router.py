@@ -3,11 +3,16 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List
+import os, time
+import paramiko
 
 from app.database import get_db
 from app import schemas, models
 from app.auth.utils import get_current_user, require_mentor
 from . import service
+from app.experiments.model import ExperimentParams
+from app.experiments.service import fetch_experiment_logs
+from app.experiments.analysis import analyze_latency
 
 router = APIRouter(prefix="/experiments", tags=["Experiments"])
 
@@ -87,3 +92,41 @@ def delete_exp(
     current_user: models.User = Depends(get_current_user),
 ):
     return service.delete_experiment(db, exp_id)
+
+@router.post("/run")
+def run_experiment(p: ExperimentParams):
+    # 1) Setup SSH client
+    ssh = paramiko.SSHClient()
+    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    ssh.connect(
+        hostname=os.getenv("SSH_HOST"),
+        username=os.getenv("SSH_USER"),
+        key_filename=os.getenv("SSH_KEY_PATH")
+    )
+
+    # 2) Build command & exec
+    cmd = f'cd cassandra-demo && ' \
+          f'./run_slowleader.sh {p.delay} {p.ops} {p.label} delay {p.fault_time}'
+    stdin, stdout, stderr = ssh.exec_command(cmd, get_pty=True)
+
+    # 3) Wait until completion
+    exit_status = stdout.channel.recv_exit_status()
+    if exit_status != 0:
+        err = stderr.read().decode()
+        ssh.close()
+        raise HTTPException(500, f"Experiment failed: {err}")
+
+    ssh.close()
+    return {"status": "done", "label": p.label}
+
+@router.get("/logs/{label}")
+def get_logs(label: str):
+    local_path = fetch_experiment_logs(label)
+    return {"local_path": local_path}
+
+@router.get("/analyze/{label}")
+def get_analysis(label: str):
+    from app.experiments.service import fetch_experiment_logs
+    log_dir = fetch_experiment_logs(label)
+    img_data = analyze_latency(log_dir)
+    return {"chart": img_data}

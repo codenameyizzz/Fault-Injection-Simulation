@@ -169,6 +169,12 @@ function ExperimentsContent() {
                         >
                             Details
                         </Link>
+                        <Link
+                            href={`/experiments/run?label=${exp.name}`}
+                            className="btn btn-sm btn-primary"
+                        >
+                            Run & Visualize
+                        </Link>
                     </li>
                 ))}
             </ul>

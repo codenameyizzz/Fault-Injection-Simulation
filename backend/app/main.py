@@ -7,6 +7,7 @@ from fastapi.security import HTTPBearer
 from app.jobs.router import router as jobs_router 
 from app.ssh.router import router as ssh_router
 from dotenv import load_dotenv
+from app.experiments.router import router as exp_router
 
 
 load_dotenv()
@@ -24,7 +25,7 @@ app.add_middleware(
 
 # === Router ===
 app.include_router(auth_router.router)
-app.include_router(exp_router.router)
+app.include_router(exp_router)
 app.include_router(jobs_router)
 app.include_router(ssh_router)
 
