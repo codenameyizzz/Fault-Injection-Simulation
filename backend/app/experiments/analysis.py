@@ -1,52 +1,70 @@
-import pandas as pd
-import matplotlib.pyplot as plt
-from pathlib import Path
+# backend/app/experiments/analysis.py
+
+import os, re, base64
 from io import BytesIO
-import base64
+import numpy as np
+import matplotlib.pyplot as plt
 
-def analyze_latency(log_dir: str):
-    # 1) Read latency log
-    latency_file = Path(log_dir) / "latency.log"
-    df = pd.read_csv(latency_file, header=None, names=["ts","lat"], comment="#")
-    df["sec"] = df.ts // 1000
+def load_latencies(path, latency_cap=None):
+    latencies = []
+    with open(path, 'r') as f:
+        for ln in f:
+            parts = ln.strip().split(',')
+            if len(parts) < 2: continue
+            try:
+                l = float(parts[1])
+                if latency_cap is None or l <= latency_cap:
+                    latencies.append(l)
+            except:
+                pass
+    return latencies
 
-    # 2) Throughput per sec
-    throughput = df.groupby("sec").size().rolling(3, center=True).mean()
+def analyze_sweep(fault_type: str,
+                  label: str,
+                  latency_cap=None,
+                  custom_dir: str = None) -> str:
+    # 1) Putuskan direktori
+    if custom_dir:
+        dirpath = custom_dir
+    else:
+        root = os.getenv("LOGS_ROOT",
+                         os.path.expanduser('~/sweep_logs'))
+        dirpath = os.path.join(root,
+                               f"{fault_type}_INJECT_PCT")
 
-    # 3) Plot to PNG buffer
-    buf = BytesIO()
-    plt.figure(figsize=(6,3))
-    throughput.plot()
-    plt.title("Throughput vs Time")
-    plt.xlabel("Seconds"); plt.ylabel("Ops/sec")
-    plt.tight_layout()
-    plt.savefig(buf, format="png")
-    plt.close()
+    print("[DEBUG] analyze_sweep dirpath:", dirpath)
+    files = os.listdir(dirpath)
+    print("[DEBUG] files:", files)
 
-    # 4) Encode PNG as base64
-    encoded = base64.b64encode(buf.getvalue()).decode()
-    return f"data:image/png;base64,{encoded}"
+    # 2) Cari .log
+    pat = re.compile(r"trace_ftcx_INJECT_PCT(\d+)\.log$")
+    entries = []
+    for fn in files:
+        m = pat.match(fn)
+        if m:
+            pct = int(m.group(1))
+            entries.append((pct, os.path.join(dirpath, fn)))
+    if not entries:
+        raise RuntimeError("No .log found to plot")
 
-def analyze_experiment(fault_type: str, label: str) -> str:
-    log_dir = Path("data") / fault_type / label
-    log_files = sorted(log_dir.glob("*.log"))
-
-    buf = BytesIO()
-    plt.figure(figsize=(8,4))
-
-    for f in log_files:
-        df = pd.read_csv(f, header=None, names=["ts","lat"], comment="#")
-        df["sec"] = df.ts // 1000
-        throughput = df.groupby("sec").size().rolling(3, center=True).mean()
-        plt.plot(throughput.index, throughput.values, label=f.stem)
-
+    # 3) Plot
+    plt.figure(figsize=(10,5))
+    for pct, path in sorted(entries):
+        lat = load_latencies(path, latency_cap)
+        arr = np.sort(lat)
+        cdf = np.arange(len(arr)) / len(arr) * 100
+        plt.plot(arr, cdf, label=f"P={pct}%")
     plt.xscale("log")
-    plt.xlabel("Time (s)")
-    plt.ylabel("Throughput (ops/sec)")
+    plt.xlabel("Latency (µs)")
+    plt.ylabel("CDF (%)")
+    plt.title(f"Latency CDF ({fault_type})")
     plt.legend()
-    plt.tight_layout()
-    plt.savefig(buf, format="png")
+    plt.grid(True, which="both", ls="--", alpha=0.5)
+    buf = BytesIO()
+    plt.savefig(buf, format="png", dpi=150)
     plt.close()
+    buf.seek(0)
+    return base64.b64encode(buf.read()).decode()
 
-    img_b64 = base64.b64encode(buf.getvalue()).decode()
-    return f"data:image/png;base64,{img_b64}"   
+# alias lama
+analyze_experiment = analyze_sweep

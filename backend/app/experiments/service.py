@@ -100,13 +100,21 @@ def fetch_experiment_logs(label: str):
     return str(local_base)
 
 def fetch_logs(fault_type: str, label: str) -> str:
+    """
+    Download semua .log dari remote '~/sweep_logs/<fault_type>_INJECT_PCT'
+    ke lokal '$LOGS_ROOT/<fault_type>_INJECT_PCT', lalu kembalikan path lokal.
+    Label tidak dipakai di path karena kita sweep ke satu folder saja.
+    """
     host = os.getenv("SSH_HOST")
     user = os.getenv("SSH_USER")
     key  = os.getenv("SSH_KEY_PATH")
 
-    base_remote = f"~/sweep_logs/{fault_type}_{label}"
-    local_base  = Path("data") / fault_type / label
-    local_base.mkdir(parents=True, exist_ok=True)
+    # remote dir sesuai script sweep:
+    remote_dir = f"/home/cc/sweep_logs/{fault_type}_INJECT_PCT"
+    # lokal sesuai analysis.py:
+    logs_root = Path(os.getenv("LOGS_ROOT"))
+    local_dir = logs_root / f"{fault_type}_INJECT_PCT"
+    local_dir.mkdir(parents=True, exist_ok=True)
 
     ssh = paramiko.SSHClient()
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
@@ -114,15 +122,19 @@ def fetch_logs(fault_type: str, label: str) -> str:
     sftp = ssh.open_sftp()
 
     try:
-        files = sftp.listdir(base_remote)
+        files = sftp.listdir(remote_dir)
     except IOError:
         sftp.close()
         ssh.close()
-        raise HTTPException(404, f"No logs at {base_remote}")
+        raise HTTPException(404, f"No logs at remote {remote_dir}")
 
-    for fname in files:
-        sftp.get(f"{base_remote}/{fname}", str(local_base / fname))
+    for fn in files:
+        if not fn.endswith(".log"):
+            continue
+        remote_path = f"{remote_dir}/{fn}"
+        local_path  = local_dir / fn
+        sftp.get(remote_path, str(local_path))
 
     sftp.close()
     ssh.close()
-    return str(local_base)
+    return str(local_dir)
