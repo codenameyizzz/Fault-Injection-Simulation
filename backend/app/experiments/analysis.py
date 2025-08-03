@@ -4,6 +4,8 @@ import os, re, base64
 from io import BytesIO
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib
+matplotlib.use("Agg")
 
 def load_latencies(path, latency_cap=None):
     latencies = []

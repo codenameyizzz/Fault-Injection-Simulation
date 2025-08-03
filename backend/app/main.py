@@ -1,14 +1,13 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.auth import router as auth_router
-from app.experiments import router as exp_router
 from fastapi.openapi.utils import get_openapi
 from fastapi.security import HTTPBearer
-from app.jobs.router import router as jobs_router 
-from app.ssh.router import router as ssh_router
 from dotenv import load_dotenv
-from app.experiments.router import router as exp_router
 
+from app.auth.router import router as auth_router
+from app.experiments.router import router as exp_router
+from app.jobs.router import router as jobs_router
+from app.ssh.router import router as ssh_router
 
 load_dotenv()
 security = HTTPBearer()
@@ -24,7 +23,7 @@ app.add_middleware(
 )
 
 # === Router ===
-app.include_router(auth_router.router)
+app.include_router(auth_router)
 app.include_router(exp_router)
 app.include_router(jobs_router)
 app.include_router(ssh_router)
