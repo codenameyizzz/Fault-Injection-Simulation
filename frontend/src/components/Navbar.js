@@ -57,6 +57,11 @@ export default function Navbar() {
                     SSH
                   </Link>
                 </li>
+                <li className="nav-item">
+                  <Link href="/Jonathan" className="nav-link">
+                    Jonathan
+                  </Link>
+                </li>
               </>
             )}
           </ul>
