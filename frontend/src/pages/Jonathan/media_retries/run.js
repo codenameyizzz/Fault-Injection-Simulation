@@ -1,4 +1,3 @@
-// File: frontend/src/pages/Jonathan/media_retries/run.js
 "use client";
 
 import { useRouter } from "next/router";
@@ -26,7 +25,15 @@ export default function MediaRetriesRun() {
   const [retryDelayMs, setRetryDelayMs] = useState(1);
 
   function handleRun() {
-    const qp = new URLSearchParams({ fault, param, start, step, end });
+    // 1) generate a unique run label timestamp
+    const now = new Date();
+    // e.g. "20250807123045"
+    const label = now
+      .toISOString()
+      .replace(/[-:.TZ]/g, "")
+      .slice(0, 14);
+
+    const qp = new URLSearchParams({ fault, param, start, step, end, label });
 
     // Only send extras for the two *not* swept
     if (param !== "INJECT_PCT") {

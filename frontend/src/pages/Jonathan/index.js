@@ -32,8 +32,9 @@ export default function JonathanHome() {
               >
                 Run
               </Link>
+              {/* drop the default param here so we go into “pick a parameter” first */}
               <Link
-                href={`/Jonathan/${f.key}/results?fault=${f.key}&param=INJECT_PCT`}
+                href={`/Jonathan/${f.key}/results?fault=${f.key}`}
                 className="btn btn-sm btn-outline-secondary"
               >
                 View Results

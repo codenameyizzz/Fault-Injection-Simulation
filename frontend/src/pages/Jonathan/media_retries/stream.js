@@ -5,13 +5,14 @@ import Link from "next/link";
 
 export default function MediaRetriesStream() {
   const router = useRouter();
+  const { fault, param, label } = router.query;
+
   const [lines, setLines] = useState([]);
   const [finished, setFinished] = useState(false);
-  const { fault, param } = router.query;
 
   useEffect(() => {
     if (!router.isReady) return;
-    const qs = window.location.search; // e.g. "?fault=…&param=…"
+    const qs = window.location.search; // "?fault=…&param=…&label=…&extras=…"
     const es = new EventSource(
       `${process.env.NEXT_PUBLIC_API_URL}/Jonathan/sweep-stream${qs}`
     );
@@ -45,13 +46,13 @@ export default function MediaRetriesStream() {
         {lines.join("\n")}
       </pre>
 
-      {finished && fault && param && (
+      {finished && fault && param && label && (
         <div className="mt-4">
           <Link
-            href={`/Jonathan/media_retries/results?fault=${fault}&param=${param}`}
+            href={`/Jonathan/media_retries/results?fault=${fault}&param=${param}&label=${label}`}
             className="btn btn-success"
           >
-            View & Download CDF Plot
+            View &amp; Download CDF Plot
           </Link>
         </div>
       )}
