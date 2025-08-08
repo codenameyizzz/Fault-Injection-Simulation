@@ -1,0 +1,142 @@
+// frontend/src/pages/Jonathan/voltage_read_retry/results.js
+
+"use client";
+
+import { useSearchParams, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+
+export default function VoltageReadRetryResults() {
+  const sp = useSearchParams();
+  const router = useRouter();
+  const fault = sp.get("fault"); // "voltage_read_retry"
+  const param = sp.get("param"); // one of INJECT_PCT, RETRY_COUNT, MIN_DELAY_US, MAX_DELAY_US
+  const label = sp.get("label"); // timestamp label
+  const api = process.env.NEXT_PUBLIC_API_URL;
+
+  const [runs, setRuns] = useState(null);
+  const [labels, setLabels] = useState(null);
+  const [imgUrl, setImgUrl] = useState(null);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    if (!fault) {
+      setError("Missing `fault` in query");
+      return;
+    }
+
+    // 1️⃣ only fault → list all (param,label) pairs
+    if (!param && !label) {
+      fetch(`${api}/Jonathan/analyze-sweep?fault=${fault}`)
+        .then((r) => (r.ok ? r.json() : Promise.reject(r.statusText)))
+        .then((data) => setRuns(data.runs))
+        .catch((e) => setError(e.toString()));
+      return;
+    }
+
+    // 2️⃣ fault+param → list labels
+    if (param && !label) {
+      fetch(`${api}/Jonathan/analyze-sweep?fault=${fault}&param=${param}`)
+        .then((r) => (r.ok ? r.json() : Promise.reject(r.statusText)))
+        .then((data) => setLabels(data.labels))
+        .catch((e) => setError(e.toString()));
+      return;
+    }
+
+    // 3️⃣ fault+param+label → fetch plot URL
+    if (param && label) {
+      fetch(
+        `${api}/Jonathan/analyze-sweep?fault=${fault}&param=${param}&label=${label}`
+      )
+        .then((r) => (r.ok ? r.json() : Promise.reject(r.statusText)))
+        .then((data) => setImgUrl(`${api}${data.url}`))
+        .catch((e) => setError(e.toString()));
+    }
+  }, [fault, param, label, api]);
+
+  if (error) {
+    return <p className="text-danger">Error: {error}</p>;
+  }
+
+  // Step 1: choose which parameter sweep
+  if (!param && runs) {
+    // dedupe params
+    const seen = new Set(),
+      params = [];
+    runs.forEach((r) => {
+      if (!seen.has(r.param)) {
+        seen.add(r.param);
+        params.push(r.param);
+      }
+    });
+
+    return (
+      <div className="container py-4">
+        <h3>Select parameter sweep for voltage read-retry</h3>
+        <ul className="list-group">
+          {params.map((p) => (
+            <li key={p} className="list-group-item">
+              <button
+                className="btn btn-link"
+                onClick={() =>
+                  router.push(
+                    `/Jonathan/voltage_read_retry/results?fault=${fault}&param=${p}`
+                  )
+                }
+              >
+                {p}
+              </button>
+            </li>
+          ))}
+        </ul>
+      </div>
+    );
+  }
+
+  // Step 2: choose which run-label
+  if (param && !label && labels) {
+    return (
+      <div className="container py-4">
+        <h3>Select run for {param}</h3>
+        <ul className="list-group">
+          {labels.map((lbl) => (
+            <li key={lbl} className="list-group-item">
+              <button
+                className="btn btn-link"
+                onClick={() =>
+                  router.push(
+                    `/Jonathan/voltage_read_retry/results?fault=${fault}&param=${param}&label=${lbl}`
+                  )
+                }
+              >
+                {lbl}
+              </button>
+            </li>
+          ))}
+        </ul>
+      </div>
+    );
+  }
+
+  // Step 3: show the CDF plot
+  if (param && label) {
+    return (
+      <div className="container py-4">
+        <h3>
+          CDF Plot: {fault.replace("_", " ")} / {param} (run {label})
+        </h3>
+        {imgUrl ? (
+          <>
+            <img src={imgUrl} alt="CDF Plot" className="img-fluid border" />
+            <a href={imgUrl} download className="btn btn-outline-primary mt-3">
+              Download PNG
+            </a>
+          </>
+        ) : (
+          <p>Loading plot…</p>
+        )}
+      </div>
+    );
+  }
+
+  return <p>Loading…</p>;
+}
