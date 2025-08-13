@@ -1,51 +1,119 @@
 // src/context/AuthContext.js
-"use client";
-import { createContext, useState, useEffect } from "react";
-import api from "@/api/api";
+import { createContext, useContext, useEffect, useState } from "react";
+import api from "../api/api";
 
-export const AuthContext = createContext();
+export const AuthContext = createContext(null);
+
+async function fetchMe() {
+  // Sesuaikan jika profil berada di endpoint lain
+  try {
+    const { data } = await api.get("/auth/me");
+    return data;
+  } catch {
+    try {
+      const { data } = await api.get("/users/me");
+      return data;
+    } catch {
+      return null;
+    }
+  }
+}
 
 export function AuthProvider({ children }) {
-  const [user, setUser]     = useState(null);
+  const [user, setUser] = useState(null); // { username, role }
+  const [token, setToken] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // 1) Cek token & fetch user detail
+  // Restore token + fetch profil (agar role terisi)
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (token) {
-      api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-      api.get("/auth/me")
-        .then(res => setUser(res.data))      // <-- res.data harus berisi { username, role, ... }
-        .catch(() => {
-          localStorage.removeItem("token");
-        })
-        .finally(() => setLoading(false));
-    } else {
-      setLoading(false);
-    }
+    (async () => {
+      try {
+        const t =
+          typeof window !== "undefined" &&
+          (localStorage.getItem("access_token") ||
+            localStorage.getItem("token") ||
+            localStorage.getItem("jwt"));
+        if (t) {
+          setToken(t);
+          const me = await fetchMe();
+          if (me) {
+            const username = me.username || me.user || me.email || me.name;
+            const role = me.role || me.roles?.[0] || me.type || me.account_type;
+            const nextUser = { username, role };
+            setUser(nextUser);
+            if (typeof window !== "undefined") {
+              localStorage.setItem("user", JSON.stringify(nextUser));
+            }
+          } else {
+            const u = typeof window !== "undefined" ? localStorage.getItem("user") : null;
+            if (u) setUser(JSON.parse(u));
+          }
+        }
+      } finally {
+        setLoading(false);
+      }
+    })();
   }, []);
 
-  // 2) Login: simpan token, panggil /auth/me
   const login = async (username, password) => {
-    const res = await api.post("/auth/login", { username, password });
-    const token = res.data.access_token;
-    localStorage.setItem("token", token);
-    api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-    // Ambil detail user lengkap
-    const me = await api.get("/auth/me");
-    setUser(me.data);   // me.data: { username, role, ... }
+    setLoading(true);
+    try {
+      const { data } = await api.post("/auth/login", { username, password });
+      const tk = data.access_token || data.token;
+      setToken(tk);
+      if (typeof window !== "undefined") {
+        localStorage.setItem("access_token", tk);
+        localStorage.setItem("token", tk);
+      }
+
+      let nextUser = data.user
+        ? { username: data.user.username || username, role: data.user.role }
+        : { username, role: undefined };
+
+      try {
+        const me = await fetchMe();
+        if (me) {
+          nextUser = {
+            username: me.username || nextUser.username,
+            role: me.role || nextUser.role,
+          };
+        }
+      } catch {}
+
+      setUser(nextUser);
+      if (typeof window !== "undefined") {
+        localStorage.setItem("user", JSON.stringify(nextUser));
+      }
+      return data;
+    } finally {
+      setLoading(false);
+    }
   };
 
-  // 3) Logout
+  const register = async (username, password) => {
+    return api.post("/auth/register", { username, password });
+  };
+
   const logout = () => {
-    localStorage.removeItem("token");
+    setToken(null);
     setUser(null);
-    delete api.defaults.headers.common["Authorization"];
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("access_token");
+      localStorage.removeItem("token");
+      localStorage.removeItem("jwt");
+      localStorage.removeItem("user");
+    }
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, loading }}>
+    <AuthContext.Provider value={{ user, token, loading, login, register, logout }}>
       {children}
     </AuthContext.Provider>
   );
 }
+
+export const useAuth = () => {
+  const ctx = useContext(AuthContext);
+  if (!ctx) throw new Error("useAuth must be used within <AuthProvider>");
+  return ctx;
+};

@@ -17,7 +17,7 @@ export default function JonathanHome() {
 
   return (
     <div className="container py-5">
-      <h1>Jonathan Fault Sweeps</h1>
+      <h1>Fault Sweeps Set</h1>
       <ul className="list-group">
         {faults.map((f) => (
           <li

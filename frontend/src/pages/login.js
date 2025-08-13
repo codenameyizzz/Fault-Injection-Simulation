@@ -1,48 +1,93 @@
-"use client";
-import { useState, useContext } from "react";
-import { AuthContext } from "@/context/AuthContext";
-import { useRouter } from "next/navigation";
+import { useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/router";
+import { useAuth } from "../context/AuthContext";
 
-export default function Login() {
-  const { login } = useContext(AuthContext);
-  const [u, setU] = useState("");
-  const [p, setP] = useState("");
+export default function LoginPage() {
+  const { login } = useAuth(); // <- ini kunci
   const router = useRouter();
 
-  const handleSubmit = async (e) => {
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPwd, setShowPwd] = useState(false);
+  const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  const onSubmit = async (e) => {
     e.preventDefault();
+    setError("");
+    setSubmitting(true);
     try {
-      await login(u, p);
+      await login(username, password);
       router.push("/dashboard");
     } catch {
-      alert("Login failed");
+      setError("Login gagal. Periksa kembali username & password Anda.");
+    } finally {
+      setSubmitting(false);
     }
   };
 
   return (
-    <div className="d-flex vh-100 align-items-center justify-content-center bg-light">
-      <form onSubmit={handleSubmit} className="border p-4 rounded bg-white">
-        <h2 className="mb-4">Login</h2>
-        <input
-          type="text"
-          className="form-control mb-3"
-          placeholder="Username"
-          value={u}
-          onChange={(e) => setU(e.target.value)}
-          required
-        />
-        <input
-          type="password"
-          className="form-control mb-4"
-          placeholder="Password"
-          value={p}
-          onChange={(e) => setP(e.target.value)}
-          required
-        />
-        <button type="submit" className="btn btn-primary w-100">
-          Login
-        </button>
-      </form>
-    </div>
+    <section className="auth-shell auth-with-nav">
+      <div className="container">
+        <div className="text-center mb-4">
+          <h1 className="auth-title font-heading fw-bold display-6 mb-2">
+            Welcome Back
+          </h1>
+          <p className="auth-subtitle lead">
+            Your journey continues here. Log in to access your personalized experience.
+          </p>
+        </div>
+
+        <div className="card-auth mx-auto">
+          {error && <div className="alert alert-danger py-2 mb-3">{error}</div>}
+
+          <form onSubmit={onSubmit} noValidate>
+            <div className="mb-3">
+              <input
+                className="form-control auth-input"
+                placeholder="Username"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                autoComplete="username"
+                required
+              />
+            </div>
+
+            <div className="mb-4 position-relative">
+              <input
+                type={showPwd ? "text" : "password"}
+                className="form-control auth-input pe-5"
+                placeholder="Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                autoComplete="current-password"
+                required
+              />
+              <button
+                type="button"
+                className="password-toggle"
+                onClick={() => setShowPwd((s) => !s)}
+                aria-label={showPwd ? "Hide password" : "Show password"}
+                title={showPwd ? "Hide password" : "Show password"}
+              >
+                <i className={`bi ${showPwd ? "bi-eye-slash" : "bi-eye"}`} />
+              </button>
+            </div>
+
+            <button type="submit" className="btn btn-auth-primary w-100" disabled={submitting}>
+              {submitting ? "Signing in..." : "Log In"}
+            </button>
+          </form>
+
+          <p className="text-center mt-4 mb-0 auth-bottom">
+            Don&apos;t have an account?{" "}
+            <Link className="auth-link" href="/register">
+              Sign up here
+            </Link>
+          </p>
+        </div>
+      </div>
+    </section>
   );
 }

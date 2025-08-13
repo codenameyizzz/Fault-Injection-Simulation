@@ -2,14 +2,21 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: "http://127.0.0.1:8000", // sesuaikan dengan backend 
+  baseURL: "http://127.0.0.1:8000",
+  withCredentials: false,
 });
 
-// Interceptor untuk otomatis kirim token jika ada
+// Sisipkan Bearer token dari localStorage (multi-key fallback)
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem("token");
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+  if (typeof window !== "undefined") {
+    const token =
+      localStorage.getItem("access_token") ||
+      localStorage.getItem("token") ||
+      localStorage.getItem("jwt");
+    if (token) {
+      config.headers = config.headers || {};
+      config.headers.Authorization = `Bearer ${token}`;
+    }
   }
   return config;
 });

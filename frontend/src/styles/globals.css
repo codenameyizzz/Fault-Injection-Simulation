@@ -40,3 +40,191 @@ a {
     color-scheme: dark;
   }
 }
+
+/* ====== Fonts ====== */
+body {
+  font-family: "Poppins", ui-sans-serif, system-ui, -apple-system, "Segoe UI",
+    Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji",
+    "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+}
+h1, h2, h3, h4, h5, h6, .font-heading {
+  font-family: "Montserrat", "Poppins", ui-sans-serif, system-ui, -apple-system,
+    "Segoe UI", Roboto, "Helvetica Neue", Arial !important;
+}
+
+/* ====== Auth Page Look ====== */
+.auth-shell {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 48px 16px;
+  /* Latar gradasi lembut + blur blobs */
+  background:
+    radial-gradient(1200px 600px at -10% -20%, rgba(59,130,246,0.08), transparent 60%),
+    radial-gradient(900px 520px at 110% 10%, rgba(147,197,253,0.14), transparent 60%),
+    radial-gradient(700px 480px at 20% 120%, rgba(99,102,241,0.10), transparent 60%),
+    linear-gradient(180deg, #ffffff 0%, #f6f9ff 100%);
+}
+
+.auth-title {
+  letter-spacing: 0.3px;
+}
+.auth-subtitle {
+  color: #6b7280; /* text-body-secondary-ish */
+  max-width: 640px;
+  margin: 0 auto;
+}
+
+.card-auth {
+  width: 100%;
+  max-width: 560px;
+  border: 0;
+  border-radius: 22px;
+  padding: 32px;
+  background: #ffffff;
+  box-shadow: 0 22px 60px rgba(31, 38, 135, 0.15);
+}
+
+@media (min-width: 768px) {
+  .card-auth { padding: 38px; }
+}
+
+.form-control.auth-input {
+  height: 54px;
+  padding: 0.75rem 1rem;
+  border-radius: 14px;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  box-shadow: inset 0 1px 0 rgba(0,0,0,0.02);
+}
+.form-control.auth-input:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 0.2rem rgba(37, 99, 235, 0.15);
+}
+
+.btn-auth-primary {
+  height: 56px;
+  border-radius: 16px;
+  font-weight: 600;
+  font-size: 1.05rem;
+  background: #2563eb;           /* biru seperti di mockup */
+  border-color: #2563eb;
+  box-shadow: 0 10px 24px rgba(37, 99, 235, 0.35);
+}
+.btn-auth-primary:hover,
+.btn-auth-primary:focus {
+  background: #1e4fd6;
+  border-color: #1e4fd6;
+}
+
+.auth-bottom {
+  color: #6b7280;
+}
+.auth-link {
+  color: #2563eb;
+  font-weight: 600;
+  text-decoration: none;
+}
+.auth-link:hover { text-decoration: underline; }
+
+.password-toggle {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  border: 0;
+  background: transparent;
+  color: #6b7280;
+}
+.password-toggle:focus { outline: none; }
+
+/* ==== Layout dasar ==== */
+html, body, #__next { height: 100%; }
+:root { --nav-height: 64px; }
+
+
+/* ==== Auth Pages (login/register) ==== */
+.auth-shell {
+  min-height: 100svh;      /* full viewport, aman di mobile */
+  width: 100%;
+  display: grid;
+  place-items: center;
+  padding: 48px 16px;
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;         /* sembunyikan tepi blob */
+}
+
+/* Gradient lembut full-bleed */
+.auth-shell::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background:
+    radial-gradient(800px 400px at -10% -10%, rgba(59,130,246,0.12), transparent 65%),
+    radial-gradient(700px 360px at 110% 0%, rgba(147,197,253,0.18), transparent 65%),
+    radial-gradient(600px 320px at 10% 120%, rgba(99,102,241,0.14), transparent 65%),
+    linear-gradient(180deg, #ffffff 0%, #f4f7ff 100%);
+  background-repeat: no-repeat;
+  background-size: cover;   /* kunci agar benar-benar menutup */
+}
+
+/* Jika ingin pakai gambar latar:
+   Tambahkan class "bg-image" pada <section className="auth-shell bg-image"> */
+.auth-shell.bg-image::before {
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.92) 0%, rgba(255,255,255,.92) 100%),
+    url('/images/auth-bg.jpg') center/cover no-repeat;
+}
+
+/* (biarkan blok font & komponen auth yang sudah kita tambahkan sebelumnya) */
+
+/* src/styles/globals.css — tambahkan di paling bawah */
+.navbar.sticky-top { min-height: var(--nav-height); }
+
+html, body, #__next { height: 100%; }
+
+/* Sudah ada .auth-shell dari sebelumnya; tambahkan variannya */
+.auth-shell {
+  min-height: 100svh;
+  width: 100%;
+  display: grid;
+  place-items: center;
+  padding: 48px 16px;
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+}
+.auth-shell::before {
+  content: "";
+  position: absolute; inset: 0; z-index: -1;
+  background:
+    radial-gradient(800px 400px at -10% -10%, rgba(59,130,246,0.12), transparent 65%),
+    radial-gradient(700px 360px at 110% 0%, rgba(147,197,253,0.18), transparent 65%),
+    radial-gradient(600px 320px at 10% 120%, rgba(99,102,241,0.14), transparent 65%),
+    linear-gradient(180deg, #ffffff 0%, #f4f7ff 100%);
+  background-size: cover; background-repeat: no-repeat;
+}
+/* Jika navbar tampil, beri ruang di atas */
+.auth-with-nav { padding-top: 5px; }
+
+/* Opsional: jika pakai gambar latar
+.auth-shell.bg-image::before {
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.92) 0%, rgba(255,255,255,.92) 100%),
+    url('/images/auth-bg.jpg') center/cover no-repeat;
+}
+*/
+
+.nav-glass {
+  background: rgba(255, 255, 255, 0.78);
+  backdrop-filter: saturate(180%) blur(14px);
+  border-bottom: 1px solid rgba(99, 102, 241, 0.15);
+}
+.navbar .nav-link { transition: color .2s, opacity .2s; }
+.navbar .nav-link:hover { opacity: .85; }
+.navbar .nav-link.active { color: var(--bs-primary) !important; }
+
+.card-elevated { box-shadow: 0 10px 30px rgba(0,0,0,.08); border: 0; }
+.card-elevated:hover { box-shadow: 0 18px 44px rgba(0,0,0,.12); transition: box-shadow .2s; }
